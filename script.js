@@ -4,9 +4,10 @@ document.documentElement.classList.add('js');
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// Cursor glow follows the pointer.
+// Cursor glow follows the pointer. This tracks the cursor rather than animating
+// on its own, so it runs regardless of the reduced-motion setting.
 const glow = document.querySelector('.cursor-glow');
-if (glow && !reduceMotion) {
+if (glow) {
   window.addEventListener('pointermove', (e) => {
     glow.style.left = `${e.clientX}px`;
     glow.style.top = `${e.clientY}px`;
@@ -36,42 +37,40 @@ if (navToggle && navLinks) {
   });
 }
 
-// Typing animation in the terminal card.
+// Typing animation in the terminal card. Small, stationary, and part of the
+// page's character, so it runs for everyone; only the large scroll-reveal
+// movement is suppressed under reduced motion.
 const typed = document.getElementById('typed');
 if (typed) {
-  if (reduceMotion) {
-    typed.textContent = 'projects';
-  } else {
-    const words = ['skills', 'projects', 'experience', 'contact', 'github', 'linkedin'];
-    let wordIndex = 0;
-    let charIndex = 0;
-    let deleting = false;
+  const words = ['skills', 'projects', 'experience', 'contact', 'github', 'linkedin'];
+  let wordIndex = 0;
+  let charIndex = 0;
+  let deleting = false;
 
-    const typeLoop = () => {
-      // Pause while the tab is hidden to avoid pointless CPU/battery use.
-      if (document.hidden) {
-        setTimeout(typeLoop, 500);
+  const typeLoop = () => {
+    // Pause while the tab is hidden to avoid pointless CPU/battery use.
+    if (document.hidden) {
+      setTimeout(typeLoop, 500);
+      return;
+    }
+    const word = words[wordIndex];
+    if (!deleting) {
+      typed.textContent = word.slice(0, ++charIndex);
+      if (charIndex === word.length) {
+        deleting = true;
+        setTimeout(typeLoop, 900);
         return;
       }
-      const word = words[wordIndex];
-      if (!deleting) {
-        typed.textContent = word.slice(0, ++charIndex);
-        if (charIndex === word.length) {
-          deleting = true;
-          setTimeout(typeLoop, 900);
-          return;
-        }
-      } else {
-        typed.textContent = word.slice(0, --charIndex);
-        if (charIndex === 0) {
-          deleting = false;
-          wordIndex = (wordIndex + 1) % words.length;
-        }
+    } else {
+      typed.textContent = word.slice(0, --charIndex);
+      if (charIndex === 0) {
+        deleting = false;
+        wordIndex = (wordIndex + 1) % words.length;
       }
-      setTimeout(typeLoop, deleting ? 55 : 90);
-    };
-    typeLoop();
-  }
+    }
+    setTimeout(typeLoop, deleting ? 55 : 90);
+  };
+  typeLoop();
 }
 
 // Footer year.
